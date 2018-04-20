@@ -25,13 +25,14 @@ public class ConcurrentUrlReaderService {
         this.maxThreads = maxThreads;
     }
 
-    public Map<String,String> getUrlContent(List<String> urls) {
+    public List<String> getUrlContent(List<String> urls, String searchTerm) {
         if (urls == null || urls.isEmpty()) {
             throw new IllegalArgumentException("URLs can not be null or empty.");
         }
 
         Queue<String> queue = getQueue();
         queue.addAll(urls);
+        List<String> results = Collections.synchronizedList(new ArrayList<>());
 
         // set cookie handler to accept all cookies.
         CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
@@ -39,7 +40,7 @@ public class ConcurrentUrlReaderService {
         LOG.debug("STARTING [" + maxThreads + "] workers...");
         List<UrlReaderWorker> workers = new ArrayList<>();
         for (int i=0; i < maxThreads; i++) {
-            UrlReaderWorker worker = new UrlReaderWorker(queue, "worker_" + (i+1));
+            UrlReaderWorker worker = new UrlReaderWorker(queue, "worker_" + (i+1), results, searchTerm);
             workers.add(worker);
             worker.start();
         }
@@ -57,7 +58,7 @@ public class ConcurrentUrlReaderService {
             }
         }
 
-        return Collections.emptyMap();
+        return results;
     }
 
     private Queue<String> getQueue() {
