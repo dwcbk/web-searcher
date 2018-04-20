@@ -42,7 +42,7 @@ public class WebsiteSearcher {
             maxThreads = DEFAULT_MAX_THREADS;
         }
         // get max number of URLs to search or use the default value if user didn't specify
-        int maxUrls = args.length == 2 ? getIntArg(args[1], DEFAULT_MAX_URLS) : DEFAULT_MAX_URLS;
+        int maxUrls = args.length >= 2 ? getIntArg(args[1], DEFAULT_MAX_URLS) : DEFAULT_MAX_URLS;
         // get search term or use the default value if user didn't specify
         String searchTerm = args.length == 3 ? args[2] : DEFAULT_SEARCH_TERM;
         System.out.println("Running with settings: max threads: " + maxThreads +
