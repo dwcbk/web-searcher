@@ -19,9 +19,22 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.List;
 
+/**
+ * This class reads a URL and returns the body contents as a String.
+ */
 public class UrlReader {
     private static final Logger LOG = LoggerFactory.getLogger(UrlReader.class);
 
+    private UrlReader() {}
+
+    /**
+     * Loads the contents of a CSV file from the specified URL and returns the list of URLs found in the URL column.
+     * See {@link CsvParser} for more details.
+     *
+     * @param urlVal fully-qualified URL containing the CSV file
+     * @return the list of URLs or an empty list (never null)
+     * @see CsvParser
+     */
     public static List<String> getUrlsFromCsvUrl(String urlVal) {
         if (StringUtils.isEmpty(urlVal)) {
             throw new IllegalArgumentException("URL string can not be null.");
@@ -32,6 +45,13 @@ public class UrlReader {
         return csvParser.parseAndReturnUrls(urlContents);
     }
 
+    /**
+     * Return the body/contents of a URL. If the URL could not be loaded (due to timeout or a 400/500 error), then null
+     * is returned. To specify a specific timeout, use {@link #getUrlContentsWithTimeout(String, int)}.
+     *
+     * @param url
+     * @return
+     */
     public static String getUrlContents(String url) {
         InputStream inputStream = null;
         try {
@@ -49,9 +69,19 @@ public class UrlReader {
         }
     }
 
+    /**
+     * Return the body/contents of a URL. If the URL could not be loaded (due to timeout or a 400/500 error), then null
+     * is returned.
+     *
+     * @param url
+     * @param timeoutSecs
+     * @return
+     * @throws IOException
+     */
     public static String getUrlContentsWithTimeout(String url, int timeoutSecs) throws IOException {
         LOG.debug("Reading url: " + url);
 
+        // Create the request object
         HttpURLConnection huc = (HttpURLConnection) toUrl(url).openConnection();
         HttpURLConnection.setFollowRedirects(true);
         huc.setConnectTimeout(timeoutSecs * 1000);
@@ -70,6 +100,8 @@ public class UrlReader {
             LOG.warn("SSLHandshakeException for url: " + url);
             return null;
         }
+        // get the HTTP response code. If the response is a redirect (HTTP status 300), then recursively call
+        // this method to follow the redirect
         int responseCode = huc.getResponseCode();
         if (responseCode != 200) {
             LOG.debug("URL: " + url + " returned status code " + responseCode);
@@ -88,12 +120,20 @@ public class UrlReader {
             }
         }
         String result = IOUtils.toString(huc.getInputStream(), "UTF-8");
+        // spme websites return a 200 response with just a redirect in the boby.
+        // That's fine but this tool ignores those redirects (for now).
 //        if (result.length() < 1000) {
 //            System.out.println( "response for " + url + ":\n\t\t" + result);
 //        }
         return result;
     }
 
+    /**
+     * Returns a URL string as a {@link URL} object
+     *
+     * @param urlVal
+     * @return
+     */
     private static URL toUrl(String urlVal) {
         try {
             return new URL( urlVal );
@@ -102,6 +142,10 @@ public class UrlReader {
         }
     }
 
+    /**
+     * Helper method for globally setting the cookie policy (so more URLs will return 200 responses vs not
+     * accepting cookies)
+     */
     public static void enableCookies() {
         CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
     }
