@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class UrlReaderTest {
 
-    @Test
+//    @Test
     public void testUrl() {
         UrlReader.enableCookies();
         runUrlTest("https://flickr.com");

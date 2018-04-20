@@ -5,7 +5,7 @@ import org.junit.Test;
 
 public class ContentSearchTest {
 
-    @Test
+//    @Test
     public void testRegexSearch() {
 //        String content = "Hello World, foo Bar.";
         String content = "Hello World Foo\nFoo Bar.";
