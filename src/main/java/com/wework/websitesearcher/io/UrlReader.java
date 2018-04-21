@@ -32,17 +32,30 @@ public class UrlReader {
      * See {@link CsvParser} for more details.
      *
      * @param urlVal fully-qualified URL containing the CSV file
+     * @param max max number of URLs to return
      * @return the list of URLs or an empty list (never null)
      * @see CsvParser
+     * @throws IllegalArgumentException if urlVal is null or empty
      */
-    public static List<String> getUrlsFromCsvUrl(String urlVal) {
+    public static List<String> getUrlsFromCsvUrl(String urlVal, int max) {
         if (StringUtils.isEmpty(urlVal)) {
             throw new IllegalArgumentException("URL string can not be null.");
         }
 
         String urlContents = getUrlContents(urlVal);
         CsvParser csvParser = new CsvParser();
-        return csvParser.parseAndReturnUrls(urlContents);
+        List<String> results = csvParser.parseAndReturnUrls(urlContents);
+        if (results == null || results.isEmpty()) {
+            // if there aren't any URLs, then exit the program right away.
+            System.out.println("Couldn't load the list of URLs or the list was empty.");
+            LOG.warn("Couldn't load the list of URLs or the list was empty.");
+            System.exit(0);
+        }
+        else if (results.size() > max) {
+            // truncate the list of URLs if the MAX urls to search is less than the total # of urls in the list
+            results = results.subList(0, max);
+        }
+        return results;
     }
 
     /**
@@ -119,13 +132,7 @@ public class UrlReader {
                 return getUrlContentsWithTimeout(location, timeoutSecs);
             }
         }
-        String result = IOUtils.toString(huc.getInputStream(), "UTF-8");
-        // spme websites return a 200 response with just a redirect in the boby.
-        // That's fine but this tool ignores those redirects (for now).
-//        if (result.length() < 1000) {
-//            System.out.println( "response for " + url + ":\n\t\t" + result);
-//        }
-        return result;
+        return IOUtils.toString(huc.getInputStream(), "UTF-8");
     }
 
     /**

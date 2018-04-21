@@ -13,8 +13,8 @@ import java.util.Queue;
  * Package-private thread that loads the content from a list of URLs and searches their content for the given search
  * term regex.
  */
-class UrlReaderWorker extends Thread {
-    private static final Logger LOG = LoggerFactory.getLogger(UrlReaderWorker.class);
+class UrlSearchServiceWorker extends Thread {
+    private static final Logger LOG = LoggerFactory.getLogger(UrlSearchServiceWorker.class);
 
     private final Queue<String> urlQueue;
     private final List<String> results;
@@ -29,7 +29,7 @@ class UrlReaderWorker extends Thread {
      *                List object is thread-safe)
      * @param searchTerm regex search
      */
-    UrlReaderWorker(Queue<String> urlQueue, String name, List<String> results, String searchTerm) {
+    UrlSearchServiceWorker(Queue<String> urlQueue, String name, List<String> results, String searchTerm) {
         super(name);
         this.urlQueue = urlQueue;
         this.results = results;
@@ -51,7 +51,7 @@ class UrlReaderWorker extends Thread {
             String urlContents = getUrlContents(url);
             if (urlContents != null) {
                 LOG.debug("content length for url: {} is {}", url, urlContents.length());
-                if (ContentSearchService.contentsMatchRegex(urlContents, searchTerm)) {
+                if (UrlSearchService.contentsMatchRegex(urlContents, searchTerm)) {
                     LOG.debug("URL {} DID contain search term {}", url, searchTerm);
                     results.add(url);
                 }

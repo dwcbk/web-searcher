@@ -2,12 +2,21 @@ package com.wework.websitesearcher.services;
 
 import org.apache.commons.lang3.StringUtils;
 
-/**
- * Service with a helper method for matching a regex against a String.
- */
-public class ContentSearchService {
+import java.util.List;
 
-    private ContentSearchService() {}
+/**
+ * Service for loading the content from a list of URLs and searching that content for the given search term regex.
+ */
+public interface UrlSearchService {
+
+    /**
+     * Run this service for the given list of URLs and return the URLs whose content mathces the regex search term.
+     *
+     * @param urls list of URLs whose content you wish to search
+     * @param searchTerm regex to search for in the contents of each URL.
+     * @return the list of URLs whose contents matches the given regex, or an empty list of none found
+     */
+    List<String> searchUrlsForTerm(List<String> urls, String searchTerm);
 
     /**
      * Returns true if the content matches the regex. Returns false if the regex doesn't match or the content or regex
@@ -19,10 +28,11 @@ public class ContentSearchService {
      * @param regex
      * @return
      */
-    public static boolean contentsMatchRegex(String content, String regex) {
+    static boolean contentsMatchRegex(String content, String regex) {
         if (StringUtils.isEmpty(content) || StringUtils.isEmpty(regex)) {
             return false;
         }
         return content.matches(regex);
     }
+
 }

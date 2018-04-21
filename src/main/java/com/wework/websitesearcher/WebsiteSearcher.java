@@ -1,7 +1,7 @@
 package com.wework.websitesearcher;
 
 import com.wework.websitesearcher.io.UrlReader;
-import com.wework.websitesearcher.services.ConcurrentUrlReaderService;
+import com.wework.websitesearcher.services.UrlSearchServiceFactory;
 import com.wework.websitesearcher.util.Stopwatch;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,15 +33,14 @@ public class WebsiteSearcher {
     public static void main(String[] args) {
         System.out.println("Welcome to Website Searcher. Args: " + Arrays.asList(args));
 
-
         // get max number of threads to use or use the default value if user didn't specify
-        int maxThreads = args.length >= 1 ? getIntArg(args[0], DEFAULT_MAX_THREADS) : DEFAULT_MAX_THREADS;
+        int maxThreads = args.length >= 1 ? convertArgToInt(args[0], DEFAULT_MAX_THREADS) : DEFAULT_MAX_THREADS;
         // make sure user doesn't run with too many threads
         if (maxThreads > DEFAULT_MAX_THREADS) {
             maxThreads = DEFAULT_MAX_THREADS;
         }
         // get max number of URLs to search or use the default value if user didn't specify
-        int maxUrls = args.length >= 2 ? getIntArg(args[1], DEFAULT_MAX_URLS) : DEFAULT_MAX_URLS;
+        int maxUrls = args.length >= 2 ? convertArgToInt(args[1], DEFAULT_MAX_URLS) : DEFAULT_MAX_URLS;
         // get search term or use the default value if user didn't specify
         String searchTerm = args.length == 3 ? args[2] : DEFAULT_SEARCH_TERM;
         System.out.println("Running with settings: max threads: " + maxThreads +
@@ -64,7 +62,7 @@ public class WebsiteSearcher {
      * @param defaultVal
      * @return
      */
-    private static int getIntArg(String val, int defaultVal) {
+    private static int convertArgToInt(String val, int defaultVal) {
         if (val == null || val.isEmpty()) {
             return defaultVal;
         }
@@ -91,30 +89,14 @@ public class WebsiteSearcher {
 
     private void run() {
         stopwatch.start();
-        // get the list of URLs from the CSV file located at 'urlsLocation'
-        List<String> urls = UrlReader.getUrlsFromCsvUrl(urlsLocation);
-        if (urls == null || urls.isEmpty()) {
-            // if there aren't any URLs, then exit the program right away.
-            System.out.println("Couldn't load the list of URLs or the list was empty.");
-            LOG.warn("Couldn't load the list of URLs or the list was empty.");
-            System.exit(0);
-        }
-        else if (urls.size() > maxUrls) {
-            // truncate the list of URLs if the MAX urls to search is less than the total # of urls in the list
-            urls = urls.subList(0, maxUrls);
-        }
+
+        List<String> urls = UrlReader.getUrlsFromCsvUrl(urlsLocation, maxUrls);
+
         // set cookie handler global property so that more URLs will return 200 responses.
         UrlReader.enableCookies();
 
         LOG.info("Loaded list of URLs to search ({} urls)", urls.size());
-        List<String> results = null;
-        // run the search of all the URLs in single or multi threaded mode
-        if (maxThreads == 1) {
-            results = runSingleThreaded(urls);
-        }
-        else {
-            results = runMultiThreaded(urls);
-        }
+        List<String> results = UrlSearchServiceFactory.getInstance(maxThreads).searchUrlsForTerm(urls, searchTerm);
 
         // now that we have the results, write hte output to file "results.txt"
         String outputContents = "URLs containing the search term '" + searchTerm + "'\n" + StringUtils.join(results, "\n");
@@ -131,20 +113,4 @@ public class WebsiteSearcher {
         LOG.info("Website Search is complete. Found {} results from {} urls in {}", results.size(), urls.size(), Stopwatch.toHuman(elapsed));
         System.out.println(String.format("Website Search is complete. Found %s results from %s urls time %s", results.size(), urls.size(), Stopwatch.toHuman(elapsed)));
     }
-
-    private List<String> runMultiThreaded(List<String> urls) {
-        ConcurrentUrlReaderService urlReaderService = new ConcurrentUrlReaderService(DEFAULT_MAX_THREADS);
-        return urlReaderService.getUrlContent(urls, searchTerm);
-    }
-
-    private List<String> runSingleThreaded(List<String> urls) {
-        List<String> results = new ArrayList<>();
-        for (String url : urls) {
-            String urlContents = UrlReader.getUrlContents(url);
-            LOG.trace("read url: {} with content size: {}", url, StringUtils.length(urlContents));
-        }
-        return results;
-    }
-
-
 }
