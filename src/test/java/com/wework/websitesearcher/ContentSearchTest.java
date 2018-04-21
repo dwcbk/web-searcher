@@ -1,7 +1,6 @@
 package com.wework.websitesearcher;
 
-import com.wework.websitesearcher.services.ContentSearchService;
-import org.junit.Test;
+import com.wework.websitesearcher.services.UrlSearchService;
 
 public class ContentSearchTest {
 
@@ -18,6 +17,6 @@ public class ContentSearchTest {
     }
 
     private void test(String content, String regex) {
-        System.out.println("Content contains regex '" + regex + "': " + ContentSearchService.contentsMatchRegex(content, regex));
+        System.out.println("Content contains regex '" + regex + "': " + UrlSearchService.contentsMatchRegex(content, regex));
     }
 }
